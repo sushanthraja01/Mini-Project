@@ -3,7 +3,7 @@ const Farm = require('../models/Farm')
 const Farmer = require('../models/Farmer')
 
 const addfarm = async(req,res) => {
-    const {lat,lan} = req.body || {};
+    const {lat,lan,name,size,locname} = req.body || {};
     if(!lat || !lan){
         return res.status(200).send("Location is Required");
     }
@@ -13,6 +13,9 @@ const addfarm = async(req,res) => {
             return res.status(200).send({"status":"error","mssg":"Farmer not found"})
         }
         const farm = new Farm({
+            name,
+            size,
+            locname,
             lat,
             lan,
             farmers: f._id
@@ -177,4 +180,22 @@ const updateSoilValues = async (req, res) => {
 };
 
 
-module.exports = {addfarm,cp:cropPrediction,uptval:updateSoilValues};
+const getfarmsbyid = async(req,res) => {
+    try {
+        const farmer = await Farmer.findById(req.fid);
+        if(!farmer){
+            return res.status(200).send({"Status":"error","mssg":"Token is Required"});
+        }
+        const farms = await Farm.find({farmers:farmer._id})
+        if(farms.length===0){
+            return res.status(200).send({"status":"success","mssg":"No Products","farms":farms})
+        }
+        return res.status(200).send({"status":"success","farms":farms})
+    } catch (error) {
+        console.log("error at getfarmsbyid",error);
+        return res.status(400).send({"status":"error","mssg":"internal server error"})
+    }
+}
+
+
+module.exports = {addfarm,cp:cropPrediction,uptval:updateSoilValues,gfbyid:getfarmsbyid};

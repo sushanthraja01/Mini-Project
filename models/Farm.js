@@ -3,6 +3,12 @@ const Crop = require('./Crop')
 const Farmer = require('./Farmer')
 
 const farmschema = mongoose.Schema({
+    name:{
+        type:String
+    },
+    size:{
+        type:Number
+    },
     n:{
         type:Number
     },
@@ -40,6 +46,9 @@ const farmschema = mongoose.Schema({
     lan:{
         type:String,
         required:true
+    },
+    locname:{
+        type:String
     },
     crops:[{
         type:mongoose.Schema.Types.ObjectId,

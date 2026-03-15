@@ -2,11 +2,16 @@ const express = require('express')
 const mongoose = require('mongoose')
 const FarmerController = require('./routes/FarmerRouter')
 const FarmController = require('./routes/FarmRouter')
+const cors = require('cors');
 const app = express();
 require('dotenv').config()
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// const allowedorigins = ["http://localhost:5173"]
+
+app.use(cors());
 
 
 app.use((req,res,next)=>{
