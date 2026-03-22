@@ -1,10 +1,12 @@
 const axios = require('axios')
 const Farm = require('../models/Farm')
-const Farmer = require('../models/Farmer')
+const Farmer = require('../models/Farmer');
+const Crop = require('../models/Crop');
 
 const addfarm = async(req,res) => {
-    const {lat,lan,name,size,locname} = req.body || {};
-    if(!lat || !lan){
+    const {lat,lan,name,size,locname,n,p,k} = req.body || {};
+
+    if(!lat || !lan || !name || !size || !locname){
         return res.status(200).send("Location is Required");
     }
     try {
@@ -18,12 +20,14 @@ const addfarm = async(req,res) => {
             locname,
             lat,
             lan,
+            locname,
+            n,p,k,fn:n,fp:p,fk:k,
             farmers: f._id
         })
         const ffarm = await farm.save();
         f.farms.push(ffarm._id);
         await f.save();
-        return res.status(200).send("Farm added Successfully")
+        return res.status(200).send({"mssg":"Farm added Successfully"})
     } catch (error) {
         console.log("Error at Add Farm",error)
         return res.status(400).send("Internal Server Error")
@@ -180,7 +184,7 @@ const updateSoilValues = async (req, res) => {
 };
 
 
-const getfarmsbyid = async(req,res) => {
+const getallfarmsbyid = async(req,res) => {
     try {
         const farmer = await Farmer.findById(req.fid);
         if(!farmer){
@@ -197,5 +201,49 @@ const getfarmsbyid = async(req,res) => {
     }
 }
 
+const getsinglefarmbyid = async (req, res) => {
+    try {
+        const farmId = req.params.id; 
+        const farmerId = req.fid;
 
-module.exports = {addfarm,cp:cropPrediction,uptval:updateSoilValues,gfbyid:getfarmsbyid};
+        const farmer = await Farmer.findById(farmerId);
+        if (!farmer) {
+            return res.status(401).json({
+                status: "error",
+                message: "Please login first"
+            });
+        }
+
+        
+        const farm = await Farm.findOne({
+            _id: farmId,
+            farmers: farmerId
+        })
+        .populate("crops")
+        .populate("farmers");
+
+
+        if (!farm) {
+            return res.status(403).json({
+                status: "error",
+                message: "Unauthorized access or farm not found"
+            });
+        }
+
+        
+        return res.status(200).json({
+            status: "success",
+            data: farm
+        });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            status: "error",
+            message: "Internal server error"
+        });
+    }
+};
+
+
+module.exports = {addfarm,cp:cropPrediction,uptval:updateSoilValues,gafbyid:getallfarmsbyid,gfbid:getsinglefarmbyid};

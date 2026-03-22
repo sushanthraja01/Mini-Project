@@ -10,6 +10,7 @@ const verifytoken = async(req,res,next) => {
         }
         const decodded = jwt.verify(t,process.env.JWT_SECRET);
         const f = await Farmer.findById(decodded.fid);
+        console.log(decodded.fid)
         if(!f){
             return res.status(200).send("Token is invalid")
         }
