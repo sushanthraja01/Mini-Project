@@ -8,8 +8,10 @@ const router = express.Router();
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-const CALLBACK_URL = process.env.burl;
+const CALLBACK_URL = `${process.env.pburl}/auth/google/callback`;
 const FRONTEND_URL = process.env.furl;
+
+console.log(CALLBACK_URL)
 
 // Step 1: Redirect user to Google consent screen
 router.get('/google', (req, res) => {
