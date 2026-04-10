@@ -1,12 +1,13 @@
 const express = require('express')
 const verify = require('../middleware/jwtverification')
-const {addfarm,cp,uptval,gafbyid,gfbid} = require('../controller/FarmController')
+const {addfarm,cp,uptval,gafbyid,gfbid,dfbid} = require('../controller/FarmController')
 const router = express.Router();
 
 router.post('/addfarm',verify,addfarm);
 router.get('/getallfarmsbyid',verify,gafbyid)
 router.get('/getsinglefarm/:id',verify,gfbid)
-router.get('/cp',cp);
-router.patch('/updatefarm',uptval)
+router.post('/cp',verify,cp);
+router.patch('/updatefarm',verify,uptval)
+router.delete("/deletebyid",verify,dfbid);
 
 module.exports = router;

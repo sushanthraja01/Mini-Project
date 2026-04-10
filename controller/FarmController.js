@@ -38,7 +38,7 @@ const addfarm = async(req,res) => {
 
 
 const cropPrediction = async (req, res) => {
-    const { farmId, temperature, humidity, rainfall } = req.body;
+    const { farmId, n, p, k, ph, temperature, humidity, rainfall } = req.body;
 
     try {
 
@@ -58,7 +58,13 @@ const cropPrediction = async (req, res) => {
             });
         }
 
-        if (!farm.n || !farm.p || !farm.k || !farm.ph) {
+        // Use values from request body first, fallback to farm DB values
+        const soilN = Number(n) || Number(farm.n);
+        const soilP = Number(p) || Number(farm.p);
+        const soilK = Number(k) || Number(farm.k);
+        const soilPh = Number(ph) || Number(farm.ph);
+
+        if (!soilN || !soilP || !soilK || !soilPh) {
             return res.status(400).send({
                 status: "error",
                 msg: "Please fill N, P, K and pH values before prediction"
@@ -110,26 +116,43 @@ const cropPrediction = async (req, res) => {
             avgRain = rain / 6;
         }
 
+        // Get current month for season detection
+        const currentMonth = new Date().getMonth() + 1;
+
         const mlResponse = await axios.post(
             "http://localhost:5000/predict",
             {
-                N: Number(farm.n),
-                P: Number(farm.p),
-                K: Number(farm.k),
-                ph: Number(farm.ph),
+                N: soilN,
+                P: soilP,
+                K: soilK,
+                ph: soilPh,
                 temperature: avgTemp,
                 humidity: avgHumidity,
-                rainfall: avgRain
+                rainfall: avgRain,
+                month: currentMonth
             }
         );
 
+        // Update farm soil values in DB
+        farm.n = soilN;
+        farm.p = soilP;
+        farm.k = soilK;
+        farm.ph = soilPh;
+        await farm.save();
+
         return res.status(200).send({
             status: "success",
-            predictedCrop: mlResponse.data.predicted_crop,
+            recommendations: mlResponse.data,
             weatherUsed: {
-                temperature: avgTemp,
-                humidity: avgHumidity,
-                rainfall: avgRain
+                temperature: Math.round(avgTemp * 10) / 10,
+                humidity: Math.round(avgHumidity * 10) / 10,
+                rainfall: Math.round(avgRain * 10) / 10
+            },
+            soilUsed: {
+                n: soilN,
+                p: soilP,
+                k: soilK,
+                ph: soilPh
             }
         });
 
@@ -139,7 +162,7 @@ const cropPrediction = async (req, res) => {
 
         return res.status(500).send({
             status: "error",
-            msg: "Internal Server Error"
+            msg: "Prediction failed. Make sure the ML server is running on port 5000."
         });
     }
 };
@@ -246,4 +269,31 @@ const getsinglefarmbyid = async (req, res) => {
 };
 
 
-module.exports = {addfarm,cp:cropPrediction,uptval:updateSoilValues,gafbyid:getallfarmsbyid,gfbid:getsinglefarmbyid};
+const delFarmById = async (req, res) => {
+    try {
+        const { delfarm } = req.body;
+
+        if (!delfarm) {
+            return res.status(400).send({"mssg":"Farm ID is required"});
+        }
+
+        
+        const farm = await Farm.findById(delfarm);
+        if (!farm) {
+            return res.status(404).send({"mssg":"Farm not found"});
+        }
+
+        
+        await Crop.deleteMany({ farm: delfarm });
+
+        await Farm.findByIdAndDelete(delfarm);
+
+        return res.status(200).send({"mssg":"Farm and related crops deleted successfully"});
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send({"mssg":"Internal Server Error"});
+    }
+};
+
+module.exports = {addfarm,cp:cropPrediction,uptval:updateSoilValues,gafbyid:getallfarmsbyid,gfbid:getsinglefarmbyid,dfbid:delFarmById};

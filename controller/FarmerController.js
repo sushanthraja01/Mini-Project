@@ -40,7 +40,7 @@ const log = async(req,res) => {
         }else{
             if(await bcrypt.compare(pass,ce.password)){
                 const t = jwt.sign({fid: ce._id},process.env.JWT_SECRET)
-                return res.status(200).send({"status":"success","mssg":"Login Success","token":t});
+                return res.status(200).send({"status":"success","mssg":"Login Success","token":t,"name":ce.name,"email":ce.email});
             }else{
                 return res.status(200).send({"status":"error","mssg":"Incorrect Password"});
             }
@@ -51,5 +51,17 @@ const log = async(req,res) => {
     }
 }
 
+const getProfile = async(req,res) => {
+    try {
+        const f = await Farmer.findById(req.fid).select('name email -_id');
+        if(!f){
+            return res.status(404).send({"status":"error","mssg":"User not found"});
+        }
+        return res.status(200).send({"status":"success","name":f.name,"email":f.email});
+    } catch (error) {
+        console.log("Error in getProfile",error)
+        return res.status(400).send({"status":"error","mssg":"Internal Server Error"});
+    }
+}
 
-module.exports = {reg,log}
+module.exports = {reg,log,getProfile}

@@ -27,6 +27,9 @@ const farmschema = mongoose.Schema({
     fk:{
         type:Number
     },
+    ph:{
+        type:Number
+    },
     temparatue:{
         type:Number
     },
